@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuaca Profesional Terkini</title>
+    <style>
+        /* Pengaturan Umum */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #2c3e50, #bdc3c7); /* Gradasi biru gelap */
+            color: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.85);
+            border-radius: 12px;
+            width: 80%;
+            max-width: 650px;
+            padding: 40px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            backdrop-filter: blur(15px);
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 30px;
+            color: #2c3e50;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 2px;
+        }
+
+        label {
+            font-size: 18px;
+            color: #555;
+            margin-right: 10px;
+        }
+
+        input[type="text"] {
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 8px;
+            border: 2px solid #ccc;
+            width: 60%;
+            margin-right: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+
+        button {
+            padding: 12px 25px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-4px);
+        }
+
+        #loading {
+            display: none;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #weatherResult {
+            font-size: 22px;
+            margin-top: 30px;
+            color: #2c3e50;
+        }
+
+        .weather-info {
+            margin-top: 15px;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+
+        .weather-info p {
+            margin: 8px 0;
+            font-size: 18px;
+        }
+
+        .error-message {
+            color: red;
+            font-size: 18px;
+        }
+
+        /* Visual Effects for Weather */
+        .clouds, .rain, .storm, .lightning {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .cloud {
+            position: absolute;
+            background: #f0f0f0;
+            border-radius: 50%;
+            opacity: 0.8;
+            animation: cloudMove 20s linear infinite;
+            box-shadow: 0px 4px 6px rgba(0,0,0,0.2);
+        }
+
+        .rain .drop {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.7);
+            width: 4px;
+            height: 12px;
+            animation: rainAnimation 1.5s linear infinite;
+        }
+
+        .lightning {
+            background-color: rgba(255, 255, 0, 0.7);
+            position: absolute;
+            width: 6px;
+            height: 60px;
+            opacity: 0;
+            animation: lightningStrike 0.1s linear infinite;
+        }
+
+        @keyframes cloudMove {
+            0% { left: -200px; top: 20%; }
+            100% { left: 100%; top: 20%; }
+        }
+
+        @keyframes rainAnimation {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(100vh); }
+        }
+
+        @keyframes lightningStrike {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+    </style>
+</head>
+<body>
+    <div id="visualEffect"></div>
+    <div class="container">
+        <h1>Cuaca Terkini</h1>
+        <label for="city">Masukkan Kota:</label>
+        <input type="text" id="city" placeholder="Contoh: Jakarta">
+        <button onclick="getWeather()">Cari Cuaca</button>
+        <p id="loading">Memuat data...</p>
+        <div id="weatherResult">
+            <p>Cuaca akan muncul di sini.</p>
+        </div>
+    </div>
+
+    <script>
+        async function getWeather() {
+            const city = document.getElementById('city').value.trim();
+
+            if (!city) {
+                document.getElementById('weatherResult').innerHTML = "<p class='error-message'>Mohon masukkan nama kota.</p>";
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('weatherResult').innerHTML = '';
+            removeVisualEffect();  // Hapus efek cuaca sebelumnya
+
+            const apiKey = '7f5684edf3efa39648d04968ca5acf6c';
+            const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${city},ID&appid=${apiKey}&units=metric`;
+
+            try {
+                const response = await fetch(apiUrl);
+                if (response.ok) {
+                    const data = await response.json();
+
+                    // Menampilkan data cuaca
+                    document.getElementById('weatherResult').innerHTML = `
+                        <div class="weather-info">
+                            <p><strong>Kota:</strong> ${data.name}</p>
+                            <p><strong>Cuaca:</strong> ${data.weather[0].description}</p>
+                            <p><strong>Suhu:</strong> ${data.main.temp} °C</p>
+                            <p><strong>Kelembaban:</strong> ${data.main.humidity}%</p>
+                            <p><strong>Tekanan Udara:</strong> ${data.main.pressure} hPa</p>
+                        </div>
+                    `;
+
+                    // Menambahkan efek visual berdasarkan cuaca
+                    switch (data.weather[0].main.toLowerCase()) {
+                        case 'clear':
+                            break; // Tidak perlu efek visual khusus untuk cuaca cerah
+                        case 'rain':
+                            displayRainEffect();
+                            break;
+                        case 'clouds':
+                            displayCloudEffect();
+                            break;
+                        case 'thunderstorm':
+                            displayStormEffect();
+                            break;
+                        default:
+                            break;
+                    }
+
+                } else {
+                    const errorData = await response.json();
+                    document.getElementById('weatherResult').innerHTML = `<p class='error-message'>Gagal mendapatkan data cuaca. Kesalahan: ${errorData.message}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('weatherResult').innerHTML = "<p class='error-message'>Terjadi kesalahan dalam mengambil data. Periksa koneksi atau coba lagi.</p>";
+                console.error("Error:", error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+
+        // Fungsi untuk menampilkan efek visual
+        function displayRainEffect() {
+            const rainContainer = document.createElement('div');
+            rainContainer.classList.add('rain');
+            for (let i = 0; i < 100; i++) {
+                const drop = document.createElement('div');
+                drop.classList.add('drop');
+                drop.style.left = `${Math.random() * 100}vw`;
+                drop.style.animationDelay = `${Math.random() * 2}s`;
+                rainContainer.appendChild(drop);
+            }
+            document.getElementById('visualEffect').appendChild(rainContainer);
+        }
+
+        function displayCloudEffect() {
+            const cloud = document.createElement('div');
+            cloud.classList.add('cloud');
+            cloud.style.width = `${Math.random() * 200 + 300}px`;
+            cloud.style.height = `${Math.random() * 50 + 100}px`;
+            cloud.style.top = `${Math.random() * 20 + 30}vh`;
+            cloud.style.left = `-300px`;
+            document.getElementById('visualEffect').appendChild(cloud);
+        }
+
+        function displayStormEffect() {
+            displayRainEffect();
+            displayLightningEffect();
+        }
+
+        function displayLightningEffect() {
+            const lightning = document.createElement('div');
+            lightning.classList.add('lightning');
+            lightning.style.left = `${Math.random() * 90 + 5}vw`;
+            lightning.style.animationDuration = `${Math.random() * 0.5 + 0.5}s`;
+            document.getElementById('visualEffect').appendChild(lightning);
+        }
+
+        // Fungsi untuk menghapus efek visual
+        function removeVisualEffect() {
+            document.getElementById('visualEffect').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
